@@ -6,17 +6,18 @@
     <title>제22대 국회 인사이트</title>
     <style>
         :root { --primary: #004ea2; --bg: #f8f9fa; }
-        body { background-color: var(--bg); font-family: sans-serif; margin: 0; padding: 20px; }
+        body { background-color: var(--bg); font-family: 'Pretendard', sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 40px; }
         .filter-wrap { background: white; padding: 15px; border-radius: 50px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 40px; }
         .btn-party { padding: 8px 18px; border: none; border-radius: 20px; cursor: pointer; background: #f1f3f5; font-weight: 600; transition: 0.2s; }
         .btn-party.active { background: var(--primary); color: white; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
-        .card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); transition: 0.3s; }
+        .card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.06); transition: 0.3s; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-8px); }
         .card-header { display: flex; padding: 20px; align-items: center; border-bottom: 1px solid #f1f3f5; }
-        .photo-box { width: 85px; height: 105px; border-radius: 10px; overflow: hidden; margin-right: 18px; background: #eee; }
-        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .photo { width: 85px; height: 105px; border-radius: 10px; overflow: hidden; margin-right: 18px; background: #eee; }
+        .photo img { width: 100%; height: 100%; object-fit: cover; }
         .main-info h2 { margin: 5px 0; font-size: 1.25rem; }
         .card-body { padding: 20px; font-size: 0.85rem; }
         .staff-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; }
@@ -25,7 +26,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>제22대 국회의원 정당별 명부</h1>
+    <h1>제22대 국회의원 & 보좌진 명부</h1>
     <div class="filter-wrap" id="partyButtons">
         <button class="btn-party active" onclick="filterByParty('전체', this)">전체</button>
         <button class="btn-party" onclick="filterByParty('국민의힘', this)">국민의힘</button>
@@ -37,30 +38,33 @@
     <div id="memberGrid" class="grid">데이터를 불러오는 중입니다...</div>
 </div>
 <script>
-    const MY_KEY = '82fd6d7e707b49108a3b217a84a1b479';
+    const MY_KEY = 'b0e661b10e61455fad458779aefe560d';
     let masterData = [];
+
     async function init() {
         const url = `https://open.assembly.go.kr/portal/openapi/ALLNAMEMBER?KEY=${MY_KEY}&Type=json&pIndex=1&pSize=300`;
         try {
             const res = await fetch(url);
             const json = await res.json();
-            if(json.ALLNAMEMBER && json.ALLNAMEMBER[1] && json.ALLNAMEMBER[1].row) {
+            
+            // 핵심 수정: ALLNAMEMBER 데이터의 실제 row 데이터(인덱스 1번)를 가져옵니다.
+            if(json.ALLNAMEMBER && json.ALLNAMEMBER[1]) {
                 masterData = json.ALLNAMEMBER[1].row;
                 render(masterData);
             } else {
-                const errorMsg = json.RESULT ? json.RESULT.MESSAGE : "데이터 구조 오류";
-                document.getElementById('memberGrid').innerHTML = `<p style='grid-column:1/-1; text-align:center;'>${errorMsg}<br>국회 API 사이트에서 'ALLNAMEMBER' 신청 승인 여부를 확인하세요.</p>`;
+                document.getElementById('memberGrid').innerHTML = "API 승인 대기 중이거나 데이터가 없습니다.";
             }
         } catch (e) {
-            document.getElementById('memberGrid').innerHTML = "<p style='grid-column:1/-1; text-align:center;'>서버 연결 실패. 깃허브에 올려서 확인해 주세요.</p>";
+            document.getElementById('memberGrid').innerHTML = "서버 연결 실패. 깃허브 주소로 접속해 주세요.";
         }
     }
+
     function render(list) {
         const grid = document.getElementById('memberGrid');
         grid.innerHTML = list.map(m => `
             <div class="card">
                 <div class="card-header">
-                    <div class="photo-box"><img src="${m.JPG_LINK || ''}" onerror="this.src='https://via.placeholder.com/85x105?text=No+Photo'"></div>
+                    <div class="photo"><img src="${m.JPG_LINK || ''}" onerror="this.src='https://via.placeholder.com/85x105?text=No+Photo'"></div>
                     <div class="main-info">
                         <p style="margin:0; color:#004ea2; font-weight:bold; font-size:0.8rem;">${m.POLY_NM || '무소속'}</p>
                         <h2>${m.HG_NM || '이름 없음'}</h2>
@@ -82,6 +86,7 @@
             </div>
         `).join('');
     }
+
     function filterByParty(partyName, btn) {
         document.querySelectorAll('.btn-party').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
